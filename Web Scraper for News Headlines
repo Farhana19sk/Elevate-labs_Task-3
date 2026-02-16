@@ -1,0 +1,79 @@
+"""
+Web Scraper for News Headlines
+Scrapes top headlines from a news website
+and saves them into a text file.
+"""
+
+import requests
+from bs4 import BeautifulSoup
+
+
+URL = "https://www.bbc.com/news"   # You can change to any public news site
+OUTPUT_FILE = "headlines.txt"
+
+
+def fetch_html(url):
+    """Send GET request and return HTML content."""
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise error for bad status codes
+
+        return response.text
+
+    except requests.exceptions.RequestException as e:
+        print("Error fetching the website:", e)
+        return None
+
+
+def extract_headlines(html):
+    """Extract headlines from HTML using BeautifulSoup."""
+    soup = BeautifulSoup(html, "html.parser")
+
+    headlines = []
+
+    # Extract text from all <h2> tags
+    for tag in soup.find_all("h2"):
+        text = tag.get_text(strip=True)
+
+        # Avoid empty or duplicate headlines
+        if text and text not in headlines:
+            headlines.append(text)
+
+    return headlines
+
+
+def save_to_file(headlines):
+    """Save headlines into a text file."""
+    try:
+        with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
+            for index, headline in enumerate(headlines, start=1):
+                file.write(f"{index}. {headline}\n")
+
+        print(f"\nSuccessfully saved {len(headlines)} headlines to '{OUTPUT_FILE}'")
+
+    except Exception as e:
+        print("Error saving file:", e)
+
+
+def main():
+    print("Fetching news headlines...\n")
+
+    html = fetch_html(URL)
+
+    if html:
+        headlines = extract_headlines(html)
+
+        if headlines:
+            save_to_file(headlines)
+        else:
+            print("No headlines found.")
+    else:
+        print("Failed to retrieve data.")
+
+
+if __name__ == "__main__":
+    main()
